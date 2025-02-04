@@ -1,18 +1,17 @@
-from flask import Flask, render_template
-from controler import WebControler
-from view import WebView
-from module import WebModule
-app = Flask(__name__)
-view = WebView()
-module = WebModule()
-controller = WebControler(module, view)
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from config import Config
+from controller import Controller
 
-@app.route('/')
-def hello_world():
-    return render_template(controller.start())
+db = SQLAlchemy()
 
-@app.route('/submit')
-def submit():
-    return render_template()
-if __name__ == '__main__':
-    app.run()
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object(Config)
+
+    db.init_app(app)
+
+    # Register the controller
+    Controller(app)
+
+    return app

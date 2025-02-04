@@ -1,7 +1,10 @@
-class WebView():
-    def show(self, data):
-        if data:
-            page = 'in-home.html'
-        else:
-            page = 'out-home.html'
-        return page
+from flask import render_template
+
+class View:
+    @staticmethod
+    def render_home():
+        return render_template('home.html')
+
+    @staticmethod
+    def render_about():
+        return render_template('about.html')
