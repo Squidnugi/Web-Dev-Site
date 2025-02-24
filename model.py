@@ -1,4 +1,5 @@
 from werkzeug.security import generate_password_hash, check_password_hash
+import requests
 
 class User:
     def __init__(self, username, password_hash):
@@ -11,6 +12,7 @@ class User:
 class Model:
     def __init__(self):
         self.users = {}
+        self.BASE_URL = "http://127.0.0.1:8000"
 
     def get_user_by_username(self, username):
         return self.users.get(username)
