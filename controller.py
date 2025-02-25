@@ -18,10 +18,10 @@ class Controller:
         self.main_bp.add_url_rule('/login', 'login', self.login, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/signup', 'signup', self.signup, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/logout', 'logout', self.logout)
-    
+
     def get_users(self):
         return View.render_user(self.model.getusers())
-    
+
     def get_user(self, user_id):
         user = self.model.getuser(user_id)
         return View.render_user(user)
