@@ -19,4 +19,4 @@ class View:
 
     @staticmethod
     def render_signup():
-        return render_template('signin.html')
+        return render_template('signup.html')

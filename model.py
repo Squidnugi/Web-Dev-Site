@@ -31,4 +31,4 @@ class Model:
     def create_user(self, email, password):
         password_hash = generate_password_hash(password)
         user = User(email, password_hash)
-        response = requests.post(f"{self.BASE_URL}/users/", json=user.to_dict())
+        requests.post(f"{self.BASE_URL}/users/", json=user.to_dict())

@@ -8,4 +8,5 @@ def create_app():
     # Register the controller
     Controller(app)
 
+
     return app
