@@ -2,6 +2,15 @@
     background-color: #55686b;
 }
 
-a{
+.navbar-custom .nav-link {
     color: #c9d6e1;
+}
+
+.navbar-custom .nav-link:hover {
+    color: #c9d6e1;
+}
+
+.logo-img {
+    width: 75px;
+    height: 75px;
 }

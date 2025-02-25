@@ -20,3 +20,11 @@ class View:
     @staticmethod
     def render_signup():
         return render_template('signup.html')
+
+    @staticmethod
+    def render_sessions():
+        return render_template('sessions.html')
+    
+    @staticmethod
+    def render_contact():
+        return render_template('contact.html')
