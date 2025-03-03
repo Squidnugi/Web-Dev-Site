@@ -1,6 +1,8 @@
 from flask import Blueprint, request, redirect, url_for, session, flash
 from view import View
 from model import Model
+import secrets
+
 
 class Controller:
     def __init__(self, app):
@@ -8,7 +10,7 @@ class Controller:
         self.routes()
         self.model = Model()
         app.register_blueprint(self.main_bp)
-        app.secret_key = 'your_secret_key'
+        app.secret_key = secrets.token_hex(32)
 
     def routes(self):
         self.main_bp.add_url_rule('/', 'home', View.render_home)
@@ -22,6 +24,7 @@ class Controller:
         #self.main_bp.add_url_rule('/user/<int:user_id>', 'update_user', self.update_user, methods=['PUT'])
         self.main_bp.add_url_rule('/sessions', 'sessions', self.sessions)
         self.main_bp.add_url_rule('/contact', 'contact', self.contact, methods=['GET', 'POST'])
+        self.main_bp.add_url_rule('/profile', 'profile', self.profile)
 
     def get_users(self):
         return View.render_user(self.model.getusers())
@@ -73,3 +76,6 @@ class Controller:
             flash('Message sent successfully')
             return redirect(url_for('main.contact'))
         return View.render_contact()
+
+    def profile(self):
+        return View.render_profile()

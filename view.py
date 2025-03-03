@@ -28,3 +28,7 @@ class View:
     @staticmethod
     def render_contact():
         return render_template('contact.html')
+
+    @staticmethod
+    def render_profile():
+        return render_template('profile.html')
