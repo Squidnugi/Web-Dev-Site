@@ -2,6 +2,7 @@ from flask import Blueprint, request, redirect, url_for, session, flash
 from view import View
 from model import Model
 import secrets
+from flask_mail import Mail, Message
 
 
 class Controller:
@@ -11,6 +12,15 @@ class Controller:
         self.model = Model()
         app.register_blueprint(self.main_bp)
         app.secret_key = secrets.token_hex(32)
+
+        # Configure Flask-Mail
+        # app.config['MAIL_SERVER'] = 'smtp.example.com'
+        # app.config['MAIL_PORT'] = 587
+        # app.config['MAIL_USE_TLS'] = True
+        # app.config['MAIL_USERNAME'] = 'your-email@example.com'
+        # app.config['MAIL_PASSWORD'] = 'your-email-password'
+        # app.config['TESTING'] = True
+        # self.mail = Mail(app)
 
     def routes(self):
         self.main_bp.add_url_rule('/', 'home', View.render_home)
@@ -25,6 +35,7 @@ class Controller:
         self.main_bp.add_url_rule('/sessions', 'sessions', self.sessions)
         self.main_bp.add_url_rule('/contact', 'contact', self.contact, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/profile', 'profile', self.profile)
+        self.main_bp.add_url_rule('/admindashboard', 'admindashboard', self.admindashboard, methods=['GET', 'POST'])
 
     def get_users(self):
         return View.render_user(self.model.getusers())
@@ -43,7 +54,7 @@ class Controller:
                 session['username'] = username
                 return redirect(url_for('main.home'))
             else:
-                flash('Invalid username or password')
+                flash('Invalid username or password', 'warning')
         return View.render_login()
 
     def signup(self):
@@ -52,10 +63,12 @@ class Controller:
             password = request.form['password']
             account_type = request.form['account_type']
             if self.model.get_user_by_username(username):
-                flash('Username already exists')
+                flash('Username already exists', 'error')
+            elif account_type.lower() == 'admin':
+                flash('Invalid account type', 'warning')
             else:
                 self.model.create_user(username, password, account_type)
-                flash('User created successfully')
+                flash('User created successfully', 'success')
                 return redirect(url_for('main.login'))
         return View.render_signup()
 
@@ -72,10 +85,18 @@ class Controller:
             name = request.form['name']
             email = request.form['email']
             message = request.form['message']
-            # Handle the form submission (e.g., save to database, send email)
-            flash('Message sent successfully')
+            # Send email
+            # msg = Message('Contact Form Submission',
+            #               sender='your-email@example.com',
+            #               recipients=['recipient@example.com'])
+            # msg.body = f"Name: {name}\nEmail: {email}\nMessage: {message}"
+            # self.mail.send(msg)
+            flash('Message sent successfully', 'success')
             return redirect(url_for('main.contact'))
         return View.render_contact()
 
     def profile(self):
         return View.render_profile()
+    
+    def admindashboard(self):
+        return View.render_admindashboard()

@@ -32,3 +32,7 @@ class View:
     @staticmethod
     def render_profile():
         return render_template('profile.html')
+    
+    @staticmethod
+    def render_admindashboard():
+        return render_template('admindashboard.html')
