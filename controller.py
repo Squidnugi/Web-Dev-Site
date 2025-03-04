@@ -67,7 +67,7 @@ class Controller:
             elif account_type.lower() == 'admin':
                 flash('Invalid account type', 'warning')
             else:
-                self.model.create_user(username, password, account_type)
+                self.model.create_user(username, password, account_type, None)
                 flash('User created successfully', 'success')
                 return redirect(url_for('main.login'))
         return View.render_signup()
