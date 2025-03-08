@@ -8,18 +8,24 @@
         <form method="post">
             <div class="mb-3">
                 <label for="username" class="form-label">Username:</label>
-                <input type="text" id="username" name="username" class="form-control" required>
+                <input type="email" id="username" name="username" class="form-control" required>
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">Password:</label>
                 <input type="password" id="password" name="password" class="form-control" required>
             </div>
             <div class="mb-3">
-                <label for="account_type" class="form-label">Account Type:</label>
-                <select id="account_type" name="account_type" class="form-select" required>
-                    <option value="client">Client</option>
+                <label for="account_type" class="form-label">Where are you coming from?</label>
+                <select id="account_type" name="account_type" class="form-select" required onchange="toggleAdminCode()">
+                    <option value="education">Education</option>
                     <option value="supervisor">Supervisor</option>
+                    <option value="other">Other</option>
+                    <option value="admin">Admin</option>
                 </select>
+            </div>
+            <div class="mb-3" id="admin_code_div" style="display: none;">
+                <label for="admin_code" class="form-label">Admin Code</label>
+                <input type="password" class="form-control" id="admin_code" name="admin_code">
             </div>
             <button type="submit" class="btn btn-primary">Sign Up</button>
         </form>

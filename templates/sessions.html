@@ -1,7 +1,171 @@
 {% extends "base.html" %}
 
-{% block title %}sessions{% endblock %}
+{% block title %}Sessions{% endblock %}
 
 {% block content %}
+    <div class="container mt-5">
+        <h2>Sessions</h2>
+        {% if session['logged_in'] %}
+            <button type="button" class="btn btn-primary" id="addSessionBtn" data-bs-toggle="modal" data-bs-target="#sessionFormModal">
+                Add Session
+            </button>
+            {% if sessions %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Session ID</th>
+                            <th>Supervisor ID</th>
+                            <th>Supervisor Email</th>
+                            <th>Client ID</th>
+                            <th>Client Email</th>
+                            <th>Date</th>
+                            <th>Additional Info</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sess in sessions %}
+                            <tr>
+                                <td>{{ sess.id }}</td>
+                                <td>{{ sess.supervisor_id }}</td>
+                                <td>{{ sess.supervisor_email }}</td>
+                                <td>{{ sess.client_id }}</td>
+                                <td>{{ sess.client_email }}</td>
+                                <td>{{ sess.date }}</td>
+                                <td>{{ sess.additional_info }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-warning btn-sm edit-session-btn" data-bs-toggle="modal" data-bs-target="#sessionFormModal" data-session-id="{{ sess.id }}">
+                                        Edit
+                                    </button>
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No sessions found.</p>
+            {% endif %}
+        {% else %}
+            <p>You need to log in to view your sessions.</p>
+        {% endif %}
+    </div>
 
+    <!-- Include the session form modal -->
+    {% include 'session_form.html' with context %}
+    <script>
+    // Add this at the beginning of your script block in sessions.html
+    function updateEmail(type) {
+        const selectElement = document.getElementById(`${type}_id`);
+        const emailElement = document.getElementById(`${type}_email`);
+
+        if (!selectElement || !emailElement) {
+            console.log(`Elements for ${type} not found`);
+            return;
+        }
+
+        // Check if the select is actually a select element and not a hidden input
+        if (selectElement.tagName === 'SELECT') {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            if (selectedOption && selectedOption.hasAttribute('data-email')) {
+                const email = selectedOption.getAttribute('data-email');
+                emailElement.value = email;
+            } else {
+                emailElement.value = '';
+            }
+        } else {
+            // If it's a hidden input (for supervisors editing), the email is already set
+            console.log(`${type} is using hidden inputs`);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Reset form when opening modal for adding a new session
+        const addSessionBtn = document.getElementById('addSessionBtn');
+        if (addSessionBtn) {
+            addSessionBtn.addEventListener('click', function() {
+                console.log("Add Session clicked");
+                const form = document.querySelector('#sessionFormModal form');
+                form.reset();
+                form.action = '/sessions/add';
+                document.getElementById('sessionFormModalLabel').textContent = 'Add Session';
+                document.getElementById('session_id').value = '';
+                document.getElementById('session-submit-btn').textContent = 'Add Session';
+
+                // Reset select elements if they exist
+                if (document.getElementById('supervisor_id')) {
+                    document.getElementById('supervisor_id').selectedIndex = 0;
+                }
+                if (document.getElementById('client_id')) {
+                    document.getElementById('client_id').selectedIndex = 0;
+                }
+
+                // Give time for the selects to update before calling updateEmail
+                setTimeout(() => {
+                    try {
+                        updateEmail('supervisor');
+                        updateEmail('client');
+                    } catch (e) {
+                        console.error("Error updating emails:", e);
+                    }
+                }, 50);
+            });
+        }
+        // Add event listeners to all edit session buttons
+        const editButtons = document.querySelectorAll('.edit-session-btn');
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const sessionId = this.getAttribute('data-session-id');
+                console.log("Editing session:", sessionId);
+
+                // Update modal title and form attributes
+                document.getElementById('sessionFormModalLabel').textContent = 'Edit Session';
+                const form = document.querySelector('#sessionFormModal form');
+                form.action = `/sessions/${sessionId}/edit`;
+                document.getElementById('session_id').value = sessionId;
+
+                // Update button text
+                const submitBtn = document.getElementById('session-submit-btn');
+                if (submitBtn) {
+                    submitBtn.textContent = 'Update Session';
+                }
+
+                // Fetch session data from API
+                fetch(`/api/sessions/${sessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Session data:", data);
+
+                        // Set form field values with session data
+                        if (data.client_id) {
+                            const clientSelect = document.getElementById('client_id');
+                            if (clientSelect && clientSelect.tagName === 'SELECT') {
+                                clientSelect.value = data.client_id;
+                            }
+                        }
+
+                        if (data.supervisor_id && !document.querySelector('input[type="hidden"]#supervisor_id')) {
+                            const supervisorSelect = document.getElementById('supervisor_id');
+                            if (supervisorSelect && supervisorSelect.tagName === 'SELECT') {
+                                supervisorSelect.value = data.supervisor_id;
+                            }
+                        }
+
+                        if (data.date) {
+                            document.getElementById('date').value = data.date;
+                        }
+
+                        if (data.additional_info) {
+                            document.getElementById('additional_info').value = data.additional_info;
+                        }
+
+                        // For email fields, we'll let the modal's shown.bs.modal event handle it
+                    })
+                    .catch(error => {
+                        console.error("Error fetching session data:", error);
+                    });
+            });
+        });
+    });
+    </script>
 {% endblock %}

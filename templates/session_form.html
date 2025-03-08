@@ -1,0 +1,154 @@
+<div class="modal fade" id="sessionFormModal" tabindex="-1" aria-labelledby="sessionFormModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sessionFormModalLabel">{% if session_data %}Edit{% else %}Add{% endif %} Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{{ url_for('main.edit_session', session_id=session_data.id) if session_data else url_for('main.add_session') }}">
+                    <!-- Inside your form in session_form.html -->
+
+                   {% if not is_supervisor %}
+                        <div class="mb-3">
+                            <label for="supervisor_id" class="form-label">Supervisor:</label>
+                            <select id="supervisor_id" name="supervisor_id" class="form-select" required onchange="updateEmail('supervisor')">
+                                {% for supervisor in supervisors %}
+                                    <option value="{{ supervisor.id }}" data-email="{{ supervisor.email }}"
+                                            {% if (session_data and session_data.supervisor_id == supervisor.id) or
+                                                  (supervisor_data and supervisor_data.id == supervisor.id) %}selected{% endif %}>
+                                        {{ supervisor.email }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supervisor_email" class="form-label">Supervisor Email:</label>
+                            <input type="email" id="supervisor_email" name="supervisor_email" class="form-control" required readonly
+                                   value="{{ session_data.supervisor_email if session_data else (supervisor_data.email if supervisor_data else '') }}">
+                        </div>
+                    {% else %}
+                        <!-- Hidden fields for supervisor data when user is a supervisor -->
+                        <input type="hidden" id="supervisor_id" name="supervisor_id" value="{{ supervisor_data.id }}">
+                        <input type="hidden" id="supervisor_email" name="supervisor_email" value="{{ supervisor_data.email }}">
+                    {% endif %}
+                    <div class="mb-3">
+                        <label for="client_id" class="form-label">Client:</label>
+                        <select id="client_id" name="client_id" class="form-select" required onchange="updateEmail('client')">
+                            {% for client in clients %}
+                                <option value="{{ client.id }}" data-email="{{ client.email }}" {% if session_data and session_data.client_id == client.id %}selected{% endif %}>
+                                    {{ client.email }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="client_email" class="form-label">Client Email:</label>
+                        <input type="email" id="client_email" name="client_email" class="form-control" required readonly value="{{ session_data.client_email if session_data else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date:</label>
+                        <input type="date" id="date" name="date" class="form-control" required value="{{ session_data.date if session_data else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="additional_info" class="form-label">Additional Info:</label>
+                        <textarea id="additional_info" name="additional_info" class="form-control">{{ session_data.additional_info if session_data else '' }}</textarea>
+                    </div>
+                    <input type="hidden" name="session_id" id="session_id" value="{{ session_data.id if session_data else '' }}">
+                    <button type="submit" class="btn btn-primary" id="session-submit-btn">
+                        {% if session_data %}Update{% else %}Add{% endif %} Session
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function updateEmail(type) {
+    const selectElement = document.getElementById(`${type}_id`);
+    const emailElement = document.getElementById(`${type}_email`);
+
+    if (!selectElement || !emailElement) {
+        console.log(`Elements for ${type} not found`);
+        return;
+    }
+
+    // Check if the select is actually a select element and not a hidden input
+    if (selectElement.tagName === 'SELECT') {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        if (selectedOption && selectedOption.hasAttribute('data-email')) {
+            const email = selectedOption.getAttribute('data-email');
+            emailElement.value = email;
+        } else {
+            emailElement.value = '';
+        }
+    } else {
+        // If it's a hidden input (for supervisors editing), the email is already set
+        console.log(`${type} is using hidden inputs`);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('sessionFormModal');
+    if (modal) {
+        modal.addEventListener('shown.bs.modal', function() {
+            updateEmail('supervisor');
+            updateEmail('client');
+        });
+    }
+    const editButtons = document.querySelectorAll('.edit-session-btn');
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const sessionId = this.getAttribute('data-session-id');
+            console.log("Editing session:", sessionId);
+
+            // Update modal title and form attributes
+            document.getElementById('sessionFormModalLabel').textContent = 'Edit Session';
+            const form = document.querySelector('#sessionFormModal form');
+            form.action = `/sessions/${sessionId}/edit`;
+            document.getElementById('session_id').value = sessionId;
+
+            // Update button text
+            const submitBtn = document.getElementById('session-submit-btn');
+            if (submitBtn) {
+                submitBtn.textContent = 'Update Session';
+            }
+
+            // Fetch session data from API
+            fetch(`/api/sessions/${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Session data:", data);
+
+                    // Set form field values with session data
+                    if (data.client_id) {
+                        const clientSelect = document.getElementById('client_id');
+                        if (clientSelect && clientSelect.tagName === 'SELECT') {
+                            clientSelect.value = data.client_id;
+                        }
+                    }
+
+                    if (data.supervisor_id && !document.querySelector('input[type="hidden"]#supervisor_id')) {
+                        const supervisorSelect = document.getElementById('supervisor_id');
+                        if (supervisorSelect && supervisorSelect.tagName === 'SELECT') {
+                            supervisorSelect.value = data.supervisor_id;
+                        }
+                    }
+
+                    if (data.date) {
+                        document.getElementById('date').value = data.date;
+                    }
+
+                    if (data.additional_info) {
+                        document.getElementById('additional_info').value = data.additional_info;
+                    }
+
+                    // For email fields, we'll let the modal's shown.bs.modal event handle it
+                })
+                .catch(error => {
+                    console.error("Error fetching session data:", error);
+                });
+        });
+    });
+});
+</script>
