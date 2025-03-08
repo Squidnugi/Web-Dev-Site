@@ -5,6 +5,17 @@
 {% block content %}
     <div class="container mt-5">
         <h2>Sessions</h2>
+
+        {% if session.get('account_type') in ['admin', 'supervisor'] %}
+        <div class="mb-4">
+            <h4>Filter Sessions</h4>
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('main.sessions', filter='all') }}" class="btn btn-outline-primary {% if current_filter == 'all' %}active{% endif %}">All Sessions</a>
+                <a href="{{ url_for('main.sessions', filter='education') }}" class="btn btn-outline-primary {% if current_filter == 'education' %}active{% endif %}">Education Only</a>
+                <a href="{{ url_for('main.sessions', filter='other') }}" class="btn btn-outline-primary {% if current_filter == 'other' %}active{% endif %}">Non-Education</a>
+            </div>
+        </div>
+        {% endif %}
         {% if session['logged_in'] %}
             <button type="button" class="btn btn-primary" id="addSessionBtn" data-bs-toggle="modal" data-bs-target="#sessionFormModal">
                 Add Session
@@ -37,8 +48,7 @@
                                     <button type="button" class="btn btn-warning btn-sm edit-session-btn" data-bs-toggle="modal" data-bs-target="#sessionFormModal" data-session-id="{{ sess.id }}">
                                         Edit
                                     </button>
-                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                </td>
+                                    <button type="button" class="btn btn-danger btn-sm delete-session-btn" data-session-id="{{ sess.id }}">Delete</button>                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -52,8 +62,8 @@
     </div>
 
     <!-- Include the session form modal -->
-    {% include 'session_form.html' with context %}
-    <script>
+{% include 'session_form.html' with context %}
+<script>
     // Add this at the beginning of your script block in sessions.html
     function updateEmail(type) {
         const selectElement = document.getElementById(`${type}_id`);
@@ -166,6 +176,16 @@
                     });
             });
         });
+        const deleteButtons = document.querySelectorAll('.delete-session-btn');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const sessionId = this.getAttribute('data-session-id');
+                if (confirm('Are you sure you want to delete this session?')) {
+                    // Redirect to the delete URL
+                    window.location.href = `/sessions/${sessionId}/delete`;
+                }
+            });
+        });
     });
-    </script>
+</script>
 {% endblock %}

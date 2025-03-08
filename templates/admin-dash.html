@@ -14,6 +14,9 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">User Management</button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="contacts-tab" data-bs-toggle="tab" data-bs-target="#contacts" type="button" role="tab" aria-controls="contacts" aria-selected="false">Contact Messages</button>
+        </li>
     </ul>
 
     <!-- Tab content -->
@@ -22,44 +25,50 @@
         <div class="tab-pane fade show active" id="schools" role="tabpanel" aria-labelledby="schools-tab">
             <div class="card">
                 <div class="card-header">
-                    <h3>Add School</h3>
+                    <h3>Schools Management</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('main.add_school') }}">
-                        <div class="mb-3">
-                            <label for="school_name" class="form-label">School Name</label>
-                            <input type="text" class="form-control" id="school_name" name="school_name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="school_address" class="form-label">School Address</label>
-                            <input type="text" class="form-control" id="school_address" name="school_address" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="school_city" class="form-label">School City</label>
-                            <input type="text" class="form-control" id="school_city" name="school_city" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="school_county" class="form-label">School County</label>
-                            <input type="text" class="form-control" id="school_county" name="school_county" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="school_postcode" class="form-label">School Postcode</label>
-                            <input type="text" class="form-control" id="school_postcode" name="school_postcode" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="school_phone" class="form-label">School Phone</label>
-                            <input type="number" class="form-control" id="school_phone" name="school_phone" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="school_website" class="form-label">School Website</label>
-                            <input type="text" class="form-control" id="school_website" name="school_website" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="school_domain" class="form-label">School Domain</label>
-                            <input type="text" class="form-control" id="school_domain" name="school_domain" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Add School</button>
-                    </form>
+                    <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addSchoolModal">
+                        Add School
+                    </button>
+
+                    {% if schools %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>City</th>
+                                    <th>Domain</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for school in schools %}
+                                <tr>
+                                    <td>{{ school.id }}</td>
+                                    <td>{{ school.name }}</td>
+                                    <td>{{ school.city }}</td>
+                                    <td>{{ school.domain }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-warning btn-sm edit-school-btn"
+                                                data-school-id="{{ school.id }}">
+                                            Edit
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm delete-school-btn"
+                                                data-school-id="{{ school.id }}">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p>No schools found.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -88,8 +97,44 @@
                                     <td>{{ user.email }}</td>
                                     <td>{{ user.account_type }}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-primary edit-user-btn" data-bs-toggle="modal" data-bs-target="#editUserModal" data-user-id="{{ user.id }}">Edit</button>
                                         <button class="btn btn-sm btn-danger delete-user-btn" data-user-id="{{ user.id }}">Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Messages Tab -->
+        <div class="tab-pane fade" id="contacts" role="tabpanel" aria-labelledby="contacts-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Contact Messages</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Message</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contact in contacts %}
+                                <tr>
+                                    <td>{{ contact.id }}</td>
+                                    <td>{{ contact.name }}</td>
+                                    <td>{{ contact.email }}</td>
+                                    <td>{{ contact.message }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger delete-contact-btn" data-contact-id="{{ contact.id }}">Delete</button>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -102,107 +147,187 @@
     </div>
 </div>
 
-<!-- Edit User Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+<!-- Edit School Modal -->
+<div class="modal fade" id="editSchoolModal" tabindex="-1" aria-labelledby="editSchoolModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                <h5 class="modal-title" id="editSchoolModalLabel">Edit School</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="edit-user-form" method="POST">
-                    <input type="hidden" id="edit_user_id" name="user_id">
+                <form method="POST" id="editSchoolForm">
                     <div class="mb-3">
-                        <label for="edit_email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="edit_email" name="email" required>
+                        <label for="edit_school_name" class="form-label">School Name</label>
+                        <input type="text" class="form-control" id="edit_school_name" name="school_name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_account_type" class="form-label">Account Type</label>
-                        <select class="form-select" id="edit_account_type" name="account_type" required>
-                            <option value="admin">Admin</option>
-                            <option value="supervisor">Supervisor</option>
-                            <option value="client">Client</option>
-                        </select>
+                        <label for="edit_school_address" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="edit_school_address" name="school_address" required>
                     </div>
                     <div class="mb-3">
-                        <label for="edit_password" class="form-label">New Password (leave blank to keep current)</label>
-                        <input type="password" class="form-control" id="edit_password" name="password">
+                        <label for="edit_school_city" class="form-label">City</label>
+                        <input type="text" class="form-control" id="edit_school_city" name="school_city" required>
                     </div>
-                    <button type="submit" class="btn btn-primary">Update User</button>
+                    <div class="mb-3">
+                        <label for="edit_school_county" class="form-label">County</label>
+                        <input type="text" class="form-control" id="edit_school_county" name="school_county" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_school_postcode" class="form-label">Postcode</label>
+                        <input type="text" class="form-control" id="edit_school_postcode" name="school_postcode" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_school_phone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="edit_school_phone" name="school_phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_school_website" class="form-label">Website</label>
+                        <input type="url" class="form-control" id="edit_school_website" name="school_website" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_school_domain" class="form-label">Email Domain</label>
+                        <input type="text" class="form-control" id="edit_school_domain" name="school_domain" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Update School</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
+
+<!-- Add School Modal -->
+<div class="modal fade" id="addSchoolModal" tabindex="-1" aria-labelledby="addSchoolModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSchoolModalLabel">Add New School</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('main.add_school') }}">
+                    <div class="mb-3">
+                        <label for="school_name" class="form-label">School Name</label>
+                        <input type="text" class="form-control" id="school_name" name="school_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="school_address" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="school_address" name="school_address" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="school_city" class="form-label">City</label>
+                        <input type="text" class="form-control" id="school_city" name="school_city" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="school_county" class="form-label">County</label>
+                        <input type="text" class="form-control" id="school_county" name="school_county" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="school_postcode" class="form-label">Postcode</label>
+                        <input type="text" class="form-control" id="school_postcode" name="school_postcode" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="school_phone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="school_phone" name="school_phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="school_website" class="form-label">Website</label>
+                        <input type="url" class="form-control" id="school_website" name="school_website" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="school_domain" class="form-label">Email Domain</label>
+                        <input type="text" class="form-control" id="school_domain" name="school_domain" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add School</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% block scripts %}
 <script>
-    // Delete user functionality
-    document.querySelectorAll('.delete-user-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-                const userId = this.getAttribute('data-user-id');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Admin dashboard initializing...');
 
-                fetch(`/admin/user/${userId}/delete`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
+    // Bootstrap modal initialization
+    const modal = new bootstrap.Modal(document.getElementById('editSchoolModal'));
+
+    // Handle edit school buttons
+    const editButtons = document.querySelectorAll('.edit-school-btn');
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const schoolId = this.getAttribute('data-school-id');
+            console.log("Editing school:", schoolId);
+
+            // Update form action and set up modal
+            const form = document.querySelector('#editSchoolModal form');
+            form.action = `/admin/school/${schoolId}/edit`;
+
+            // Fetch school data from API
+            fetch(`/admin/school/${schoolId}/json`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("School data:", data);
+
+                    // Populate form fields with school data
+                    document.getElementById('edit_school_name').value = data.name || '';
+                    document.getElementById('edit_school_address').value = data.address || '';
+                    document.getElementById('edit_school_city').value = data.city || '';
+                    document.getElementById('edit_school_county').value = data.county || '';
+                    document.getElementById('edit_school_postcode').value = data.postcode || '';
+                    document.getElementById('edit_school_phone').value = data.phone || '';
+                    document.getElementById('edit_school_website').value = data.website || '';
+                    document.getElementById('edit_school_domain').value = data.domain || '';
                 })
-                .then(response => {
-                    if (response.ok) {
-                        // Reload the page after successful deletion
-                        window.location.reload();
-                    } else {
-                        alert('Failed to delete the user. Please try again.');
-                    }
-                })
-                .catch(error => console.error('Error deleting user:', error));
+                .catch(error => {
+                    console.error("Error fetching school data:", error);
+                });
+
+            // Show the modal
+            modal.show();
+        });
+    });
+
+    // Handle delete school buttons
+    const deleteSchoolButtons = document.querySelectorAll('.delete-school-btn');
+    deleteSchoolButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const schoolId = this.getAttribute('data-school-id');
+            if (confirm('Are you sure you want to delete this school?')) {
+                window.location.href = `/admin/school/${schoolId}/delete`;
             }
         });
     });
 
-    // Edit user functionality
-    document.querySelectorAll('.edit-user-btn').forEach(button => {
-        button.addEventListener('click', function() {
+    // Handle delete user buttons
+    const deleteUserButtons = document.querySelectorAll('.delete-user-btn');
+    deleteUserButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
             const userId = this.getAttribute('data-user-id');
-
-            // Set form action for update
-            document.getElementById('edit-user-form').action = `/admin/users/${userId}/edit`;
-
-            // Get user data and populate form
-            fetch(`/api/users/${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('edit_user_id').value = data.id;
-                    document.getElementById('edit_email').value = data.email;
-                    document.getElementById('edit_account_type').value = data.account_type;
-                })
-                .catch(error => console.error('Error fetching user data:', error));
+            if (confirm('Are you sure you want to delete this user?')) {
+                window.location.href = `/admin/user/${userId}/delete`;
+            }
         });
     });
 
-    // Maintain tab state on page reload
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get the active tab from localStorage or default to schools
-        const activeTab = localStorage.getItem('adminActiveTab') || 'schools-tab';
-        const tab = document.getElementById(activeTab);
-
-        // Activate the tab
-        if (tab) {
-            const tabTrigger = new bootstrap.Tab(tab);
-            tabTrigger.show();
-        }
-
-        // Store the active tab when changed
-        const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
-        tabs.forEach(tab => {
-            tab.addEventListener('shown.bs.tab', function(event) {
-                localStorage.setItem('adminActiveTab', event.target.id);
-            });
+    // Handle delete contact buttons
+    const deleteContactButtons = document.querySelectorAll('.delete-contact-btn');
+    deleteContactButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const contactId = this.getAttribute('data-contact-id');
+            if (confirm('Are you sure you want to delete this contact message?')) {
+                window.location.href = `/admin/contact/${contactId}/delete`;
+            }
         });
     });
+});
 </script>
 {% endblock %}
 {% endblock %}

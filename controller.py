@@ -40,16 +40,25 @@ class Controller:
         self.main_bp.add_url_rule('/signup', 'signup', self.signup, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/logout', 'logout', self.logout)
         self.main_bp.add_url_rule('/admin/user/<int:user_id>/delete', 'delete_user', self.delete_user, methods=['POST'])
-        self.main_bp.add_url_rule('/admin/users/<int:user_id>/edit', 'update_user', self.update_user, methods=['POST', 'GET', 'PUT'])
         self.main_bp.add_url_rule('/sessions', 'sessions', self.sessions)
         self.main_bp.add_url_rule('/sessions/add', 'add_session', self.add_session, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/sessions/<int:session_id>/edit', 'edit_session', self.edit_session, methods=['GET', 'POST'])
-        self.main_bp.add_url_rule('/sessions/delete/<int:session_id>', 'delete_session', self.delete_session, methods=['POST'])
+        self.main_bp.add_url_rule('/sessions/<int:session_id>/delete', 'delete_session', self.delete_session, methods=['POST', 'GET', 'DELETE'])
         self.main_bp.add_url_rule('/contact', 'contact', self.contact, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/profile', 'profile', self.profile)
         self.main_bp.add_url_rule('/admindashboard', 'admindashboard', self.admindashboard, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/add_school', 'add_school', self.add_school, methods=['POST'])
         self.main_bp.add_url_rule('/api/sessions/<int:session_id>', 'api_get_session', self.get_session_api, methods=['GET'])
+        self.main_bp.add_url_rule('/admin/contact/<int:contact_id>/delete', 'delete_contact', self.delete_contact_admin, methods=['POST', 'GET', 'DELETE'])
+        self.main_bp.add_url_rule('/admin/school/<int:school_id>/delete', 'delete_school',
+                                  self.delete_school, methods=['POST', 'GET'])
+        self.main_bp.add_url_rule('/admin/school/<int:school_id>/edit', 'edit_school',
+                                  self.edit_school, methods=['POST', 'GET'])
+        self.main_bp.add_url_rule('/api/schools/<int:school_id>', 'api_get_school',
+                                  self.get_school_api, methods=['GET'])
+
+
+
     def get_users(self):
         return View.render_user(self.model.getusers())
 
@@ -120,30 +129,71 @@ class Controller:
         if 'username' in session:
             account_type = session.get('account_type')
             username = session.get('username')
+            filter_type = request.args.get('filter', 'all')  # Default filter is 'all'
 
             # Get all sessions
             all_sessions = self.model.get_sessions()
-            print(f"Total sessions: {len(all_sessions)}")  # Debug
 
-            # Filter sessions for supervisors
-            supervisor_data = None
+            # Filter sessions based on user type
+            # Filter sessions based on user type
             if account_type == 'supervisor':
+                # For supervisors, only show their own sessions
+                filtered_sessions = [s for s in all_sessions if s['supervisor_email'] == username]
+
+                # Apply additional filtering for supervisors if requested
+                if filter_type == 'education':
+                    # Get all education clients
+                    clients = self.model.get_clients()
+                    education_clients = [c for c in clients if c.get('account_type') == 'education']
+                    client_ids = [c['id'] for c in education_clients]
+                    filtered_sessions = [s for s in filtered_sessions if s['client_id'] in client_ids]
+                elif filter_type == 'other':
+                    # Get all non-education clients
+                    clients = self.model.get_clients()
+                    other_clients = [c for c in clients if c.get('account_type') == 'other']
+                    client_ids = [c['id'] for c in other_clients]
+                    filtered_sessions = [s for s in filtered_sessions if s['client_id'] in client_ids]
+
+                all_sessions = filtered_sessions
+
                 # Get supervisor data
                 supervisors = self.model.get_supervisors()
-                print(f"Supervisors: {supervisors}")  # Debug
-                print(f"Looking for supervisor with email: {username}")  # Debug
-
                 supervisor_data = next((s for s in supervisors if s['email'] == username), None)
-                if supervisor_data:
-                    print(f"Found supervisor: {supervisor_data}")  # Debug
-                    # Only show sessions where the supervisor's email matches
-                    filtered_sessions = [s for s in all_sessions if s['supervisor_email'] == username]
-                    print(f"Filtered sessions: {len(filtered_sessions)}")  # Debug
+            elif account_type == 'education':
+                # For education users, only show sessions related to their school
+                school_id = session.get('school_id')
+                # Assuming sessions have a school_id field or clients have a school_id field
+                # You'll need to adapt this to your data structure
+                filtered_sessions = []
+                clients = self.model.get_clients()
+                school_clients = [c for c in clients if c.get('school_id') == school_id]
+                client_ids = [c['id'] for c in school_clients]
+                filtered_sessions = [s for s in all_sessions if s['client_id'] in client_ids]
+                all_sessions = filtered_sessions
+                supervisor_data = None
+            elif account_type == 'other':
+                filtered_sessions = [s for s in all_sessions if s['client_email'] == username]
+                all_sessions = filtered_sessions
+                # For other account types, show only sessions where they're the client
+                supervisor_data = None
+
+            else:
+                # For admin users, apply filtering if requested
+                if filter_type == 'education':
+                    # Get all education clients
+                    clients = self.model.get_clients()
+                    education_clients = [c for c in clients if c.get('account_type') == 'education']
+                    client_ids = [c['id'] for c in education_clients]
+                    filtered_sessions = [s for s in all_sessions if s['client_id'] in client_ids]
                     all_sessions = filtered_sessions
-                else:
-                    print(f"No supervisor found with email: {username}")  # Debug
-                    # No supervisor found, show empty list
-                    all_sessions = []
+                elif filter_type == 'other':
+                    # Get all non-education clients
+                    clients = self.model.get_clients()
+                    other_clients = [c for c in clients if c.get('account_type') != 'education']
+                    client_ids = [c['id'] for c in other_clients]
+                    filtered_sessions = [s for s in all_sessions if s['client_id'] in client_ids]
+                    all_sessions = filtered_sessions
+                supervisor_data = None
 
             supervisors = self.model.get_supervisors()
             clients = self.model.get_clients()
@@ -154,10 +204,17 @@ class Controller:
             if session_id:
                 session_data = self.model.get_session(session_id)
 
-            return View.render_sessions(all_sessions, session_data, supervisors, clients,
-                                        is_supervisor=(account_type == 'supervisor'),
-                                        supervisor_email=username if account_type == 'supervisor' else None,
-                                        supervisor_data=supervisor_data)
+            return View.render_sessions(
+                all_sessions,
+                session_data,
+                supervisors,
+                clients,
+                is_supervisor=(account_type == 'supervisor'),
+                supervisor_email=username if account_type == 'supervisor' else None,
+                supervisor_data=supervisor_data,
+                is_client=True if session.get('account_type') in ['education', 'other'] else False,
+                current_filter=filter_type
+            )
         else:
             flash('You need to log in to view your sessions', 'warning')
             return redirect(url_for('main.login'))
@@ -167,15 +224,12 @@ class Controller:
             try:
                 # Create basic session data
                 session_data = {
-                    'client_id': request.form['client_id'],
-                    'client_email': request.form['client_email'],
                     'date': request.form['date'],
                     'additional_info': request.form['additional_info']
                 }
 
                 # If supervisor, use their info directly
                 if session.get('account_type') == 'supervisor':
-                    # Get supervisor's user details from their email
                     supervisor_email = session.get('username')
                     supervisor = next((s for s in self.model.get_supervisors() if s['email'] == supervisor_email), None)
 
@@ -185,10 +239,33 @@ class Controller:
 
                     session_data['supervisor_id'] = supervisor['id']
                     session_data['supervisor_email'] = supervisor_email
-                else:
-                    # For admins, use the selected supervisor
+
+                    # For supervisors, we still need to get client from form
+                    session_data['client_id'] = request.form['client_id']
+                    session_data['client_email'] = request.form['client_email']
+
+                # If education or other (clients), use their info directly
+                elif session.get('account_type') in ['education', 'other']:
+                    client_email = session.get('username')
+                    client = next((c for c in self.model.get_clients() if c['email'] == client_email), None)
+
+                    if not client:
+                        flash('Client account not found', 'danger')
+                        return redirect(url_for('main.sessions'))
+
+                    session_data['client_id'] = client['id']
+                    session_data['client_email'] = client_email
+
+                    # For clients, we still need to get supervisor from form
                     session_data['supervisor_id'] = request.form['supervisor_id']
                     session_data['supervisor_email'] = request.form['supervisor_email']
+
+                else:
+                    # For admins, use the selected supervisor and client
+                    session_data['supervisor_id'] = request.form['supervisor_id']
+                    session_data['supervisor_email'] = request.form['supervisor_email']
+                    session_data['client_id'] = request.form['client_id']
+                    session_data['client_email'] = request.form['client_email']
 
                 self.model.create_session(session_data)
                 flash('Session added successfully', 'success')
@@ -209,11 +286,19 @@ class Controller:
             supervisor_email = session.get('username')
             supervisor_data = next((s for s in supervisors if s['email'] == supervisor_email), None)
 
+        # If client (education or other), find their details
+        client_data = None
+        if session.get('account_type') in ['education', 'other']:
+            client_email = session.get('username')
+            client_data = next((c for c in clients if c['email'] == client_email), None)
+
         return View.render_sessions_form(
             supervisors=supervisors,
             clients=clients,
             is_supervisor=(session.get('account_type') == 'supervisor'),
-            supervisor_data=supervisor_data
+            supervisor_data=supervisor_data,
+            is_client=True if session.get('account_type') in ['education', 'other'] else False,
+            client_data=client_data
         )
 
     def edit_session(self, session_id):
@@ -221,8 +306,6 @@ class Controller:
             try:
                 # Get basic session data
                 session_data = {
-                    'client_id': request.form['client_id'],
-                    'client_email': request.form['client_email'],
                     'date': request.form['date'],
                     'additional_info': request.form['additional_info']
                 }
@@ -238,14 +321,38 @@ class Controller:
 
                     session_data['supervisor_id'] = supervisor['id']
                     session_data['supervisor_email'] = supervisor_email
-                else:
-                    # For admins, use the selected supervisor
+
+                    # For supervisors, we still need to get client from form
+                    session_data['client_id'] = request.form['client_id']
+                    session_data['client_email'] = request.form['client_email']
+
+                # If education or other (clients), use their info directly
+                elif session.get('account_type') in ['education', 'other']:
+                    client_email = session.get('username')
+                    client = next((c for c in self.model.get_clients() if c['email'] == client_email), None)
+
+                    if not client:
+                        flash('Client account not found', 'danger')
+                        return redirect(url_for('main.sessions'))
+
+                    session_data['client_id'] = client['id']
+                    session_data['client_email'] = client_email
+
+                    # For clients, we still need to get supervisor from form
                     session_data['supervisor_id'] = request.form['supervisor_id']
                     session_data['supervisor_email'] = request.form['supervisor_email']
+
+                else:
+                    # For admins, use the selected supervisor and client
+                    session_data['supervisor_id'] = request.form['supervisor_id']
+                    session_data['supervisor_email'] = request.form['supervisor_email']
+                    session_data['client_id'] = request.form['client_id']
+                    session_data['client_email'] = request.form['client_email']
 
                 self.model.update_session(session_id, session_data)
                 flash('Session updated successfully', 'success')
                 return redirect(url_for('main.sessions'))
+
             except KeyError as e:
                 flash(f'Missing form field: {e}', 'danger')
                 return redirect(url_for('main.edit_session', session_id=session_id))
@@ -263,12 +370,20 @@ class Controller:
             supervisor_email = session.get('username')
             supervisor_data = next((s for s in supervisors if s['email'] == supervisor_email), None)
 
+        # Get client data for the form
+        client_data = None
+        if session.get('account_type') in ['education', 'other']:
+            client_email = session.get('username')
+            client_data = next((c for c in clients if c['email'] == client_email), None)
+
         return View.render_sessions_form(
             session_data=session_data,
             supervisors=supervisors,
             clients=clients,
             is_supervisor=(session.get('account_type') == 'supervisor'),
-            supervisor_data=supervisor_data
+            supervisor_data=supervisor_data,
+            is_client=True if session.get('account_type') in ['education', 'other'] else False,
+            client_data=client_data
         )
 
     def delete_session(self, session_id):
@@ -296,7 +411,18 @@ class Controller:
     @admin_required
     def admindashboard(self):
         users = self.model.get_all_users()
-        return View.render_admindashboard(users=users)
+        contacts = self.model.get_contacts()
+        schools = self.model.get_schools()  # Add this line to get schools
+        return View.render_admindashboard(users=users, contacts=contacts, schools=schools)
+
+    @admin_required
+    def delete_contact_admin(self, contact_id):
+        try:
+            self.model.delete_contact(contact_id)
+            flash('Contact deleted successfully', 'success')
+            return redirect(url_for('main.admindashboard'))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
     @admin_required
     def add_school(self):
@@ -317,6 +443,34 @@ class Controller:
         flash('School added successfully', 'success')
         return redirect(url_for('main.admindashboard'))
 
+    @admin_required
+    def delete_school(self, school_id):
+        try:
+            self.model.delete_school(school_id)
+            flash('School deleted successfully', 'success')
+            return redirect(url_for('main.admindashboard'))
+        except Exception as e:
+            flash(f'Error deleting school: {str(e)}', 'danger')
+            return redirect(url_for('main.admindashboard'))
+
+    @admin_required
+    def edit_school(self, school_id):
+        if request.method == 'POST':
+            school_data = {
+                'name': request.form['school_name'],
+                'address': request.form['school_address'],
+                'city': request.form['school_city'],
+                'county': request.form['school_county'],
+                'postcode': request.form['school_postcode'],
+                'phone': request.form['school_phone'],
+                'website': request.form['school_website'],
+                'domain': request.form['school_domain']
+            }
+            self.model.update_school(school_id, school_data)
+            flash('School updated successfully', 'success')
+            return redirect(url_for('main.admindashboard'))
+
+
     def get_session_api(self, session_id):
         # Make sure you're returning JSON
         session_data = self.model.get_session(session_id)
@@ -326,9 +480,6 @@ class Controller:
         else:
             return jsonify({"error": "Session not found"}), 404
 
-    def delete_user(self, user_id):
-        self.model.delete_user(user_id)
-        flash('User deleted successfully', 'success')
 
     def update_user(self, user_id):
         user_data = {
@@ -354,20 +505,6 @@ class Controller:
         else:
             return jsonify({"error": "User not found"}), 404
 
-    @admin_required
-    def edit_user(self, user_id):
-        if request.method == 'POST':
-            email = request.form['email']
-            account_type = request.form['account_type']
-            password = request.form['password'] if request.form['password'] else None
-
-            try:
-                self.model.update_user(user_id, email, account_type, password)
-                flash('User updated successfully', 'success')
-            except Exception as e:
-                flash(f'Error updating user: {str(e)}', 'danger')
-
-            return redirect(url_for('main.admindashboard'))
 
     @admin_required
     def delete_user(self, user_id):
@@ -376,3 +513,11 @@ class Controller:
             return jsonify({"success": True}), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+    @admin_required
+    def get_school_api(self, school_id):
+        school_data = self.model.get_school(school_id)
+        if school_data:
+            return jsonify(school_data)
+        else:
+            return jsonify({"error": "School not found"}), 404

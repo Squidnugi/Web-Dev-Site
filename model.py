@@ -102,6 +102,22 @@ class Model:
         return response.json()
 
     def create_session(self, session_data):
+        # If client is education type, get and add school info
+        if 'client_id' in session_data:
+            client_id = session_data['client_id']
+            # Get client info to check account type
+            response = requests.get(f"{self.BASE_URL}/users/{client_id}")
+
+            # Check if the client exists
+            if response.status_code == 404:
+                print(f"Client ID {client_id} not found. Creating session without school info.")
+            else:
+                client = response.json()
+                if client.get('account_type') == 'education' and client.get('school_id'):
+                    # Add school_id to session data
+                    session_data['school_id'] = client['school_id']
+
+        # Create the session with whatever data we have
         response = requests.post(f"{self.BASE_URL}/sessions/", json=session_data)
         return response.json()
 
@@ -126,17 +142,50 @@ class Model:
     def get_clients(self):
         response = requests.get(f"{self.BASE_URL}/users")
         users = response.json()
-        clients = [user for user in users if user['account_type'] == 'education']
+        clients = [user for user in users if user['account_type'] in ['education', 'other']]
         return clients
 
     def delete_user(self, user_id):
         response = requests.delete(f"{self.BASE_URL}/users/{user_id}")
         return response.status_code == 204
 
-    def update_user(self, user_id, user_data):
-        response = requests.put(f"{self.BASE_URL}/users/{user_id}", json=user_data)
-        return response.json()
 
     def get_all_users(self):
         response = requests.get(f"{self.BASE_URL}/users")
+        return response.json()
+
+    def get_all_requests(self):
+        response = requests.get(f"{self.BASE_URL}/session_edits")
+        return response.json()
+
+    def get_supervisor_requests(self, supervisor_id):
+        response = requests.get(f"{self.BASE_URL}/session_edits/supervisor/{supervisor_id}")
+        return response.json()
+
+    def get_school_requests(self, school_id):
+        response = requests.get(f"{self.BASE_URL}/session_edits/school/{school_id}")
+        return response.json()
+
+    def get_client_requests(self, client_id):
+        response = requests.get(f"{self.BASE_URL}/session_edits/client/{client_id}")
+        return response.json()
+
+    def delete_request(self, request_id):
+        response = requests.delete(f"{self.BASE_URL}/session_edits/{request_id}")
+        return response.status_code == 204
+
+    def get_school(self, school_id):
+        response = requests.get(f"{self.BASE_URL}/schools/{school_id}")
+        return response.json()
+
+    def delete_school(self, school_id):
+        response = requests.delete(f"{self.BASE_URL}/schools/{school_id}")
+        return response.status_code == 204
+
+    def update_school(self, school_id, school_data):
+        response = requests.put(f"{self.BASE_URL}/schools/{school_id}", json=school_data)
+        return response.json()
+
+    def get_schools(self):
+        response = requests.get(f"{self.BASE_URL}/schools/")
         return response.json()
