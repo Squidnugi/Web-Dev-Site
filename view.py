@@ -1,5 +1,6 @@
 from flask import render_template
 
+# This class is responsible for rendering the HTML templates
 class View:
     @staticmethod
     def render_home():
@@ -8,10 +9,6 @@ class View:
     @staticmethod
     def render_about():
         return render_template('about.html')
-
-    @staticmethod
-    def render_user(user):
-        return render_template('user.html', user=user)
 
     @staticmethod
     def render_login():
@@ -55,9 +52,6 @@ class View:
     def render_contact():
         return render_template('contact.html')
 
-    @staticmethod
-    def render_profile():
-        return render_template('profile.html')
 
     @staticmethod
     def render_admindashboard(users=None, contacts=None, schools=None):

@@ -1,3 +1,4 @@
+// Function to toggle the admin code input
 function toggleAdminCode() {
     var accountType = document.getElementById('account_type').value;
     var adminCodeDiv = document.getElementById('admin_code_div');
@@ -7,6 +8,7 @@ function toggleAdminCode() {
         adminCodeDiv.style.display = 'none';
     }
 }
+// Function to update the email field based on the selected supervisor or client
 function updateEmail(type) {
     const selectElement = document.getElementById(`${type}_id`);
     const emailElement = document.getElementById(`${type}_email`);
@@ -31,11 +33,11 @@ function updateEmail(type) {
     }
 }
 
-// Create named handler functions that can be properly removed
+// Function to handle changes in the supervisor select
 function handleSupervisorChange() {
     updateEmail('supervisor');
 }
-
+// Function to handle changes in the client select
 function handleClientChange() {
     updateEmail('client');
 }
@@ -92,7 +94,6 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const sessionId = this.getAttribute('data-session-id');
             document.getElementById('sessionFormModalLabel').textContent = 'Edit Session';
-            // You can add AJAX here to load session data if needed
         });
     });
 });

@@ -1,3 +1,4 @@
+/* Main Navbar */
 .navbar-custom {
     background-color: #55686b;
 }
@@ -7,10 +8,170 @@
 }
 
 .navbar-custom .nav-link:hover {
-    color: #c9d6e1;
+    color: #ffffff;
 }
 
 .logo-img {
     width: 75px;
     height: 75px;
+}
+
+/* New colour scheme additions */
+body {
+    background-color: #ffffff;
+    color: #566486;
+}
+
+/* Primary buttons */
+.btn-primary {
+    background-color: #9d4179;
+    border-color: #9d4179;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #8a3868;
+    border-color: #8a3868;
+}
+
+/* Secondary buttons */
+.btn-secondary {
+    background-color: #766e5f;
+    border-color: #766e5f;
+    color: #ffffff;
+}
+
+.btn-secondary:hover {
+    background-color: #655e51;
+    border-color: #655e51;
+}
+
+/* Success elements and buttons */
+.btn-success, .alert-success {
+    background-color: #bcd2b2;
+    border-color: #bcd2b2;
+    color: #566486;
+}
+
+.btn-success:hover {
+    background-color: #a8c1a0;
+    border-color: #a8c1a0;
+    color: #566486;
+}
+
+/* Warning elements */
+.btn-warning, .alert-warning {
+    background-color: #bca940;
+    border-color: #bca940;
+    color: #ffffff;
+}
+
+.btn-warning:hover {
+    background-color: #a89638;
+    border-color: #a89638;
+}
+
+/* Cards and containers */
+.card, .container-highlight {
+    border-color: #c9d6e1;
+}
+
+.card-header {
+    background-color: #566486;
+    color: #ffffff;
+}
+
+/* Table styling */
+.table-header, thead {
+    background-color: #55686b;
+    color: #ffffff;
+}
+
+/* Form input focus */
+.form-control:focus {
+    border-color: #9d4179;
+    box-shadow: 0 0 0 0.25rem rgba(157, 65, 121, 0.25);
+}
+
+/* Accent elements */
+.accent-element {
+    background-color: #bca940;
+    color: #ffffff;
+}
+
+/* Button group styling */
+.btn-group .btn-outline-primary,
+.btn-group .btn.btn-outline-primary {
+    color: #566486;
+    border-color: #566486;
+    background-color: transparent;
+}
+
+.btn-group .btn-outline-primary:hover,
+.btn-group .btn.btn-outline-primary:hover {
+    background-color: #566486;
+    color: #ffffff;
+}
+
+.btn-group .btn-outline-primary.active,
+.btn-group .btn.btn-outline-primary.active {
+    background-color: #566486;
+    border-color: #566486;
+    color: #ffffff;
+}
+
+/* Nav tabs styling for admin dashboard */
+#adminTabs .nav-item .nav-link {
+    color: #566486;
+    border-color: #c9d6e1 #c9d6e1 #fff;
+}
+
+#adminTabs .nav-item .nav-link:hover {
+    color: #9d4179;
+    border-color: #c9d6e1 #c9d6e1 #fff;
+}
+
+#adminTabs .nav-item .nav-link.active {
+    color: #9d4179;
+    background-color: #ffffff;
+    border-color: #c9d6e1 #c9d6e1 #fff;
+    font-weight: bold;
+}
+
+/* Footer styling */
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  flex: 1 0 auto;
+}
+
+.footer {
+  flex-shrink: 0;
+  background-color: #55686b;
+  color: #ffffff;
+  padding: 20px 0;
+  margin-top: 30px;
+}
+
+.footer a {
+  color: #c9d6e1;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.footer-logo {
+  max-width: 60px;
+  margin-bottom: 10px;
 }

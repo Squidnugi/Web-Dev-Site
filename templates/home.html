@@ -4,6 +4,28 @@
 
 {% block content %}
     <div class="container mt-5">
-        <h1>Welcome to the Talking Heads Supervision test website</h1>
+        <div class="row">
+            <div class="col-md-8 offset-md-2 text-center">
+                <h1>Welcome to Talking Heads Supervision</h1>
+                <p class="lead mt-4">Professional supervision services for the education sector.</p>
+                <p>We provide high-quality supervision services to support educators.</p>
+                <a href="{{ url_for('main.contact') }}" class="btn btn-primary mt-3">Contact Us</a>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <h3>Individual Supervision</h3>
+                <p>One-to-one sessions tailored to your professional needs and development goals.</p>
+            </div>
+            <div class="col-md-4">
+                <h3>Group Supervision</h3>
+                <p>Collaborative sessions for schools to foster shared learning and peer support.</p>
+            </div>
+            <div class="col-md-4">
+                <h3>Crisis Support</h3>
+                <p>Specialized supervision to help navigate challenging situations in practice.</p>
+            </div>
+        </div>
     </div>
 {% endblock %}

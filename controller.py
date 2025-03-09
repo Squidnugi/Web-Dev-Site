@@ -4,6 +4,7 @@ from model import Model
 import secrets
 from functools import wraps
 
+# Decorator to require admin access
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -13,6 +14,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# This class is responsible for handling the routes and requests
 class Controller:
     def __init__(self, app):
         self.main_bp = Blueprint('main', __name__)
@@ -22,20 +24,10 @@ class Controller:
         app.secret_key = secrets.token_hex(32)
         self.ADMIN_CODE = 'admin123'
 
-        # Configure Flask-Mail
-        # app.config['MAIL_SERVER'] = 'smtp.example.com'
-        # app.config['MAIL_PORT'] = 587
-        # app.config['MAIL_USE_TLS'] = True
-        # app.config['MAIL_USERNAME'] = 'your-email@example.com'
-        # app.config['MAIL_PASSWORD'] = 'your-email-password'
-        # app.config['TESTING'] = True
-        # self.mail = Mail(app)
-
+    # Function to define the routes
     def routes(self):
         self.main_bp.add_url_rule('/', 'home', View.render_home)
         self.main_bp.add_url_rule('/about', 'about', View.render_about)
-        self.main_bp.add_url_rule('/user', 'users', self.get_users)
-        self.main_bp.add_url_rule('/user/<int:user_id>', 'user', self.get_user)
         self.main_bp.add_url_rule('/login', 'login', self.login, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/signup', 'signup', self.signup, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/logout', 'logout', self.logout)
@@ -45,27 +37,16 @@ class Controller:
         self.main_bp.add_url_rule('/sessions/<int:session_id>/edit', 'edit_session', self.edit_session, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/sessions/<int:session_id>/delete', 'delete_session', self.delete_session, methods=['POST', 'GET', 'DELETE'])
         self.main_bp.add_url_rule('/contact', 'contact', self.contact, methods=['GET', 'POST'])
-        self.main_bp.add_url_rule('/profile', 'profile', self.profile)
         self.main_bp.add_url_rule('/admindashboard', 'admindashboard', self.admindashboard, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/add_school', 'add_school', self.add_school, methods=['POST'])
         self.main_bp.add_url_rule('/api/sessions/<int:session_id>', 'api_get_session', self.get_session_api, methods=['GET'])
         self.main_bp.add_url_rule('/admin/contact/<int:contact_id>/delete', 'delete_contact', self.delete_contact_admin, methods=['POST', 'GET', 'DELETE'])
-        self.main_bp.add_url_rule('/admin/school/<int:school_id>/delete', 'delete_school',
-                                  self.delete_school, methods=['POST', 'GET'])
-        self.main_bp.add_url_rule('/admin/school/<int:school_id>/edit', 'edit_school',
-                                  self.edit_school, methods=['POST', 'GET'])
-        self.main_bp.add_url_rule('/api/schools/<int:school_id>', 'api_get_school',
-                                  self.get_school_api, methods=['GET'])
+        self.main_bp.add_url_rule('/admin/school/<int:school_id>/delete', 'delete_school', self.delete_school, methods=['POST', 'GET'])
+        self.main_bp.add_url_rule('/admin/school/<int:school_id>/edit', 'edit_school', self.edit_school, methods=['POST', 'GET'])
+        self.main_bp.add_url_rule('/api/schools/<int:school_id>', 'api_get_school', self.get_school_api, methods=['GET'])
 
 
-
-    def get_users(self):
-        return View.render_user(self.model.getusers())
-
-    def get_user(self, user_id):
-        user = self.model.getuser(user_id)
-        return View.render_user(user)
-
+    # Function to handle login
     def login(self):
         if request.method == 'POST':
             username = request.form['username']
@@ -76,11 +57,13 @@ class Controller:
                 session['username'] = username
                 session['account_type'] = user.account_type  # Store account type in session
                 session['school_id'] = user.school_id
+                flash('Logged in successfully', 'success')
                 return redirect(url_for('main.home'))
             else:
                 flash('Invalid username or password', 'warning')
         return View.render_login()
 
+    # Function to handle signup
     def signup(self):
         if request.method == 'POST':
             username = request.form['username']
@@ -120,11 +103,14 @@ class Controller:
                 return redirect(url_for('main.home'))
         return View.render_signup()
 
+    # Function to handle logout
     def logout(self):
         session.pop('logged_in', None)
         session.pop('username', None)
+        flash('Logged out successfully', 'success')
         return redirect(url_for('main.home'))
 
+    # Function to handle sessions
     def sessions(self):
         if 'username' in session:
             account_type = session.get('account_type')
@@ -219,6 +205,7 @@ class Controller:
             flash('You need to log in to view your sessions', 'warning')
             return redirect(url_for('main.login'))
 
+    # Funtion to add a session
     def add_session(self):
         if request.method == 'POST':
             try:
@@ -301,6 +288,7 @@ class Controller:
             client_data=client_data
         )
 
+    # Function to edit a session
     def edit_session(self, session_id):
         if request.method == 'POST':
             try:
@@ -386,11 +374,13 @@ class Controller:
             client_data=client_data
         )
 
+    # Function to delete a session
     def delete_session(self, session_id):
         self.model.delete_session(session_id)
         flash('Session deleted successfully', 'success')
         return redirect(url_for('main.sessions'))
 
+    # Function to handle contact form
     def contact(self):
         if request.method == 'POST':
             name = request.form['name']
@@ -405,9 +395,8 @@ class Controller:
                 return redirect(url_for('main.contact'))
         return View.render_contact()
 
-    def profile(self):
-        return View.render_profile()
 
+    # Function to handle admin dashboard
     @admin_required
     def admindashboard(self):
         users = self.model.get_all_users()
@@ -415,6 +404,7 @@ class Controller:
         schools = self.model.get_schools()  # Add this line to get schools
         return View.render_admindashboard(users=users, contacts=contacts, schools=schools)
 
+    # Function to handle admin contact deletion
     @admin_required
     def delete_contact_admin(self, contact_id):
         try:
@@ -422,8 +412,10 @@ class Controller:
             flash('Contact deleted successfully', 'success')
             return redirect(url_for('main.admindashboard'))
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            flash(f'Error deleting contact: {str(e)}', 'danger')
+            return redirect(url_for('main.admindashboard'))
 
+    # Function to handle school addition
     @admin_required
     def add_school(self):
         school_name = request.form['school_name']
@@ -443,6 +435,7 @@ class Controller:
         flash('School added successfully', 'success')
         return redirect(url_for('main.admindashboard'))
 
+    # Function to delete a school
     @admin_required
     def delete_school(self, school_id):
         try:
@@ -453,6 +446,7 @@ class Controller:
             flash(f'Error deleting school: {str(e)}', 'danger')
             return redirect(url_for('main.admindashboard'))
 
+    # Function to edit a school
     @admin_required
     def edit_school(self, school_id):
         if request.method == 'POST':
@@ -470,7 +464,7 @@ class Controller:
             flash('School updated successfully', 'success')
             return redirect(url_for('main.admindashboard'))
 
-
+    # Function to get a session by ID
     def get_session_api(self, session_id):
         # Make sure you're returning JSON
         session_data = self.model.get_session(session_id)
@@ -480,32 +474,7 @@ class Controller:
         else:
             return jsonify({"error": "Session not found"}), 404
 
-
-    def update_user(self, user_id):
-        user_data = {
-            'email': request.form['email'],
-            'password': request.form['password'],
-            'account_type': request.form['account_type'],
-            'school_id': request.form['school_id']
-        }
-        self.model.update_user(user_id, user_data)
-        flash('User updated successfully', 'success')
-        return redirect(url_for('main.users'))
-
-    @admin_required
-    def get_users(self):
-        users = self.model.get_all_users()
-        return jsonify(users)
-
-    @admin_required
-    def get_user(self, user_id):
-        user = self.model.get_user(user_id)
-        if user:
-            return jsonify(user)
-        else:
-            return jsonify({"error": "User not found"}), 404
-
-
+    # Function to delete a user
     @admin_required
     def delete_user(self, user_id):
         try:
@@ -514,6 +483,7 @@ class Controller:
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    # Function to get school by ID
     @admin_required
     def get_school_api(self, school_id):
         school_data = self.model.get_school(school_id)
