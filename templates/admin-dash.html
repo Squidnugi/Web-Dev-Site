@@ -270,9 +270,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const form = document.querySelector('#editSchoolModal form');
             form.action = `/admin/school/${schoolId}/edit`;
 
-            // Fetch school data from API
-            fetch(`/admin/school/${schoolId}/json`)
-                .then(response => response.json())
+            // Fetch school data from API - use the correct endpoint
+            fetch(`/admin/schools/${schoolId}`)  // This matches your route mapping
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     console.log("School data:", data);
 
@@ -285,13 +290,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('edit_school_phone').value = data.phone || '';
                     document.getElementById('edit_school_website').value = data.website || '';
                     document.getElementById('edit_school_domain').value = data.domain || '';
+
+                    // Only show the modal after data is loaded
+                    modal.show();
                 })
                 .catch(error => {
                     console.error("Error fetching school data:", error);
+                    alert("Error loading school data. Please try again.");
                 });
-
-            // Show the modal
-            modal.show();
         });
     });
 

@@ -2,6 +2,7 @@ from flask import render_template
 
 # This class is responsible for rendering the HTML templates
 class View:
+
     @staticmethod
     def render_home():
         return render_template('home.html')

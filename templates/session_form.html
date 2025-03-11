@@ -32,7 +32,7 @@
 
                     <!-- Client selection -->
                     <div class="mb-3">
-                        <label for="client_selection" class="form-label">Client:{{ is_client }}</label>
+                        <label for="client_selection" class="form-label">Client:</label>
                         {% if is_client %}
                             <!-- Fixed client (when logged in as education or other client) -->
                             <input type="hidden" name="client_id" value="{{ client_data.id }}">

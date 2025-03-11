@@ -14,24 +14,35 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Decorator to check if user is logged in
+def login_check(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            flash('You need to log in to access this page.', 'warning')
+            return redirect(url_for('main.login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # This class is responsible for handling the routes and requests
 class Controller:
     def __init__(self, app):
+        self.model = Model()
+        self.view = View
         self.main_bp = Blueprint('main', __name__)
         self.routes()
-        self.model = Model()
         app.register_blueprint(self.main_bp)
         app.secret_key = secrets.token_hex(32)
         self.ADMIN_CODE = 'admin123'
 
     # Function to define the routes
     def routes(self):
-        self.main_bp.add_url_rule('/', 'home', View.render_home)
-        self.main_bp.add_url_rule('/about', 'about', View.render_about)
+        self.main_bp.add_url_rule('/', 'home', self.view.render_home)
+        self.main_bp.add_url_rule('/about', 'about', self.view.render_about)
         self.main_bp.add_url_rule('/login', 'login', self.login, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/signup', 'signup', self.signup, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/logout', 'logout', self.logout)
-        self.main_bp.add_url_rule('/admin/user/<int:user_id>/delete', 'delete_user', self.delete_user, methods=['POST'])
+        self.main_bp.add_url_rule('/admin/user/<int:user_id>/delete', 'delete_user', self.delete_user, methods=['POST', 'GET'])
         self.main_bp.add_url_rule('/sessions', 'sessions', self.sessions)
         self.main_bp.add_url_rule('/sessions/add', 'add_session', self.add_session, methods=['GET', 'POST'])
         self.main_bp.add_url_rule('/sessions/<int:session_id>/edit', 'edit_session', self.edit_session, methods=['GET', 'POST'])
@@ -43,7 +54,7 @@ class Controller:
         self.main_bp.add_url_rule('/admin/contact/<int:contact_id>/delete', 'delete_contact', self.delete_contact_admin, methods=['POST', 'GET', 'DELETE'])
         self.main_bp.add_url_rule('/admin/school/<int:school_id>/delete', 'delete_school', self.delete_school, methods=['POST', 'GET'])
         self.main_bp.add_url_rule('/admin/school/<int:school_id>/edit', 'edit_school', self.edit_school, methods=['POST', 'GET'])
-        self.main_bp.add_url_rule('/api/schools/<int:school_id>', 'api_get_school', self.get_school_api, methods=['GET'])
+        self.main_bp.add_url_rule('/admin/schools/<int:school_id>', 'api_get_school', self.get_school_api, methods=['GET'])
 
 
     # Function to handle login
@@ -61,7 +72,7 @@ class Controller:
                 return redirect(url_for('main.home'))
             else:
                 flash('Invalid username or password', 'warning')
-        return View.render_login()
+        return self.view.render_login()
 
     # Function to handle signup
     def signup(self):
@@ -101,9 +112,10 @@ class Controller:
                 session['account_type'] = account_type  # Store account type in session
                 session['school_id'] = school_id
                 return redirect(url_for('main.home'))
-        return View.render_signup()
+        return self.view.render_signup()
 
     # Function to handle logout
+    @login_check
     def logout(self):
         session.pop('logged_in', None)
         session.pop('username', None)
@@ -111,6 +123,7 @@ class Controller:
         return redirect(url_for('main.home'))
 
     # Function to handle sessions
+    @login_check
     def sessions(self):
         if 'username' in session:
             account_type = session.get('account_type')
@@ -190,7 +203,7 @@ class Controller:
             if session_id:
                 session_data = self.model.get_session(session_id)
 
-            return View.render_sessions(
+            return self.view.render_sessions(
                 all_sessions,
                 session_data,
                 supervisors,
@@ -206,6 +219,7 @@ class Controller:
             return redirect(url_for('main.login'))
 
     # Funtion to add a session
+    @login_check
     def add_session(self):
         if request.method == 'POST':
             try:
@@ -279,7 +293,7 @@ class Controller:
             client_email = session.get('username')
             client_data = next((c for c in clients if c['email'] == client_email), None)
 
-        return View.render_sessions_form(
+        return self.view.render_sessions_form(
             supervisors=supervisors,
             clients=clients,
             is_supervisor=(session.get('account_type') == 'supervisor'),
@@ -289,6 +303,7 @@ class Controller:
         )
 
     # Function to edit a session
+    @login_check
     def edit_session(self, session_id):
         if request.method == 'POST':
             try:
@@ -364,7 +379,7 @@ class Controller:
             client_email = session.get('username')
             client_data = next((c for c in clients if c['email'] == client_email), None)
 
-        return View.render_sessions_form(
+        return self.view.render_sessions_form(
             session_data=session_data,
             supervisors=supervisors,
             clients=clients,
@@ -375,6 +390,7 @@ class Controller:
         )
 
     # Function to delete a session
+    @login_check
     def delete_session(self, session_id):
         self.model.delete_session(session_id)
         flash('Session deleted successfully', 'success')
@@ -393,7 +409,7 @@ class Controller:
             except Exception as e:
                 flash(f'Error sending message: {str(e)}', 'danger')
                 return redirect(url_for('main.contact'))
-        return View.render_contact()
+        return self.view.render_contact()
 
 
     # Function to handle admin dashboard
@@ -402,7 +418,7 @@ class Controller:
         users = self.model.get_all_users()
         contacts = self.model.get_contacts()
         schools = self.model.get_schools()  # Add this line to get schools
-        return View.render_admindashboard(users=users, contacts=contacts, schools=schools)
+        return self.view.render_admindashboard(users=users, contacts=contacts, schools=schools)
 
     # Function to handle admin contact deletion
     @admin_required
@@ -465,6 +481,7 @@ class Controller:
             return redirect(url_for('main.admindashboard'))
 
     # Function to get a session by ID
+    @login_check
     def get_session_api(self, session_id):
         # Make sure you're returning JSON
         session_data = self.model.get_session(session_id)
@@ -479,9 +496,11 @@ class Controller:
     def delete_user(self, user_id):
         try:
             self.model.delete_user(user_id)
-            return jsonify({"success": True}), 200
+            flash('User deleted successfully', "success")
+            return redirect(url_for('main.admindashboard'))
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            flash(f'Error deleting user: {str(e)}', 'danger')
+            return redirect(url_for('main.admindashboard'))
 
     # Function to get school by ID
     @admin_required
