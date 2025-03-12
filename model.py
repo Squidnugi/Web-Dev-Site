@@ -50,7 +50,7 @@ class User:
 # This class is used to store the model and all the functions that interact with the API
 class Model:
     def __init__(self):
-        self.API_URL = "https://127.0.0.1:8000"
+        self.API_URL = "https://unhappy-reindeer-squidnugiorg-4da91ec1.koyeb.app"
         self.supervisor_domain = 'example.com'
         self.TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 
